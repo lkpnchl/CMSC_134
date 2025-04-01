@@ -13,6 +13,16 @@ def main():
     
     subparsers = parser.add_subparsers(dest='command', help='Commands for different operations')
     
+    # Generate subcommand
+    generate_parser = subparsers.add_parser('generate', aliases=['gen'], 
+                                           help='Generate private and public keys')
+    generate_parser.add_argument('-o', '--output', '--out', 
+                                dest='output', required=True, type=Path,
+                                help='Filename')
+    generate_parser.add_argument('-b', '--bits', 
+                                dest='bits', default='1648', choices=['1024', '1648', '2048', '4096'],
+                                help='Bit size')
+    
     # Encrypt subcommand
     encrypt_parser = subparsers.add_parser('encrypt', aliases=['enc'], 
                                           help='Encrypt a message')
@@ -46,23 +56,40 @@ def main():
                                dest='skip_verification', action='store_true', default=False,
                                help='Option to skip integrity check')
     
-    # Generate subcommand
-    generate_parser = subparsers.add_parser('generate', aliases=['gen'], 
-                                           help='Generate private and public keys')
-    generate_parser.add_argument('-o', '--output', '--out', 
-                                dest='output', required=True, type=Path,
-                                help='Filename')
-    generate_parser.add_argument('-b', '--bits', 
-                                dest='bits', default='1648', choices=['1024', '1648', '2048', '4096'],
-                                help='Bit size')
-    
     args = parser.parse_args()
     
     if args.command is None:
         parser.print_help()
         return
     
-    if args.command in ['encrypt', 'enc']:
+    elif args.command in ['generate', 'gen']:
+        key_dir = Path("keys")
+        key_dir.mkdir(parents=True, exist_ok=True)
+
+        output = key_dir / args.output 
+        
+        bits = int(args.bits)
+        
+        if args.debug:
+            print(f"Output: {output}")
+            print(f"Bits: {bits}")
+        
+        print("Generating private and public RSA keys...")
+        
+        try:
+            utils.generate_private_key(output, bits)
+            utils.generate_public_key(output)
+            print(f"Saved {output}")
+            
+            print("Generating private and public signature keys...")
+            output_signature = utils.append_to_path(output, ".sig")
+            utils.generate_private_key(output_signature, bits)
+            utils.generate_public_key(output_signature)
+            print(f"Saved {output_signature}")
+        except Exception as err:
+            sys.stderr.write(str(err))
+    
+    elif args.command in ['encrypt', 'enc']:
         message_file = Path("sender") / args.file
         message = utils.read_input(message_file)
         public_key = Path("keys") / args.public_key
@@ -100,33 +127,6 @@ def main():
         
         try:
             utils.generate_decrypted_message(message, private_key, signature, output, skip_verification)
-        except Exception as err:
-            sys.stderr.write(str(err))
-    
-    elif args.command in ['generate', 'gen']:
-        key_dir = Path("keys")
-        key_dir.mkdir(parents=True, exist_ok=True)
-
-        output = key_dir / args.output 
-        
-        bits = int(args.bits)
-        
-        if args.debug:
-            print(f"Output: {output}")
-            print(f"Bits: {bits}")
-        
-        print("Generating private and public RSA keys...")
-        
-        try:
-            utils.generate_private_key(output, bits)
-            utils.generate_public_key(output)
-            print(f"Saved {output}")
-            
-            print("Generating private and public signature keys...")
-            output_signature = utils.append_to_path(output, ".sig")
-            utils.generate_private_key(output_signature, bits)
-            utils.generate_public_key(output_signature)
-            print(f"Saved {output_signature}")
         except Exception as err:
             sys.stderr.write(str(err))
 
