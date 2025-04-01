@@ -4,6 +4,8 @@
 
 ### COMMANDS
 
+Display Help: `python main.py`
+
 To Generate Key:
 `python main.py generate -o ./keys/name_of_key -b 2048`
 
