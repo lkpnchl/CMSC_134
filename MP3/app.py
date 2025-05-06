@@ -2,10 +2,13 @@ import secrets
 import sqlite3
 
 from flask import Flask, request, render_template, redirect
+from flask_wtf import CSRFProtect
 
 
 app = Flask(__name__)
 con = sqlite3.connect("app.db", check_same_thread=False)
+app.secret_key = secrets.token_hex()  # Needed for CSRF protection
+csrf = CSRFProtect(app)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
