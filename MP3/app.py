@@ -10,6 +10,11 @@ con = sqlite3.connect("app.db", check_same_thread=False)
 app.secret_key = secrets.token_hex()  # Needed for CSRF protection
 csrf = CSRFProtect(app)
 
+@app.after_request
+def add_csp_header(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self';"
+    return response
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     cur = con.cursor()
