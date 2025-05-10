@@ -1,5 +1,7 @@
 import secrets
 import sqlite3
+import bleach
+
 
 from flask import Flask, request, render_template, redirect
 from flask_wtf import CSRFProtect
@@ -68,8 +70,11 @@ def posts():
                           + request.cookies.get("session_token") + "';")
         user = res.fetchone()
         if user:
-            cur.execute("INSERT INTO posts (message, user) VALUES ('"
-                        + request.form["message"] + "', " + str(user[0]) + ");")
+            # Sanitize the message input to allow only safe HTML tags
+            message = request.form["message"]
+            sanitized_message = bleach.clean(message, tags=['b', 'i', 'u']) 
+
+            cur.execute("INSERT INTO posts (message, user) VALUES (?, ?)", (sanitized_message, user[0]))
             con.commit()
             return redirect("/home")
 
