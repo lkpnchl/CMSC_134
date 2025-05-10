@@ -12,6 +12,6 @@
       <input name="password" type="password" />
       <input type="submit" value="Login" />
     </form>
-    {% if error %}<em>{{ error }}</em>{% endif %}
+    {% if error %}<em>{{ error | e }}</em>{% endif %}
   </body>
 </html>
