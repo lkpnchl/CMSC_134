@@ -23,8 +23,8 @@ def login():
     if request.method == "GET":
         if request.cookies.get("session_token"):
             res = cur.execute("SELECT username FROM users INNER JOIN sessions ON "
-                              + "users.id = sessions.user WHERE sessions.token = '"
-                              + request.cookies.get("session_token") + "'")
+                              + "users.id = sessions.user WHERE sessions.token = ?", 
+                              (request.cookies.get("session_token"),))
             user = res.fetchone()
             if user:
                 return redirect("/home")
@@ -35,8 +35,7 @@ def login():
         user = res.fetchone()
         if user:
             token = secrets.token_hex()
-            cur.execute("INSERT INTO sessions (user, token) VALUES ("
-                        + str(user[0]) + ", '" + token + "');")
+            cur.execute("INSERT INTO sessions (user, token) VALUES (?, ?)", (user[0], token))
             con.commit()
             response = redirect("/home")
             response.set_cookie("session_token", token)
@@ -50,11 +49,11 @@ def home():
     cur = con.cursor()
     if request.cookies.get("session_token"):
         res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
-                          + "users.id = sessions.user WHERE sessions.token = '"
-                          + request.cookies.get("session_token") + "';")
+                          + "users.id = sessions.user WHERE sessions.token = ?",
+                          (request.cookies.get("session_token"),))
         user = res.fetchone()
         if user:
-            res = cur.execute("SELECT message FROM posts WHERE user = " + str(user[0]) + ";")
+            res = cur.execute("SELECT message FROM posts WHERE user = ?", (user[0],))
             posts = res.fetchall()
             return render_template("home.html", username=user[1], posts=posts)
 
@@ -66,8 +65,8 @@ def posts():
     cur = con.cursor()
     if request.cookies.get("session_token"):
         res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
-                          + "users.id = sessions.user WHERE sessions.token = '"
-                          + request.cookies.get("session_token") + "';")
+                          + "users.id = sessions.user WHERE sessions.token = ?",
+                          (request.cookies.get("session_token"),))
         user = res.fetchone()
         if user:
             # Sanitize the message input to allow only safe HTML tags
@@ -86,11 +85,11 @@ def logout():
     cur = con.cursor()
     if request.cookies.get("session_token"):
         res = cur.execute("SELECT users.id, username FROM users INNER JOIN sessions ON "
-                          + "users.id = sessions.user WHERE sessions.token = '"
-                          + request.cookies.get("session_token") + "'")
+                          + "users.id = sessions.user WHERE sessions.token = ?",
+                          (request.cookies.get("session_token"),))
         user = res.fetchone()
         if user:
-            cur.execute("DELETE FROM sessions WHERE user = " + str(user[0]) + ";")
+            cur.execute("DELETE FROM sessions WHERE user = ?", (user[0],))
             con.commit()
 
     response = redirect("/login")
